@@ -1,184 +1,204 @@
-#include <iostream>
 #include <conio.h>
-#include <windows.h>
-#include <dos.h>
+#include <direct.h>
+#include <iostream>
 #include <time.h>
+#include <windows.h>
 
 #define MAXSNAKESIZE 100
-
-using namespace std;
 
 HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 COORD CursorPosition;
 
-void gotoxy(int x, int y){
+void goToXY(int x, int y)
+{
 	CursorPosition.X = x;
 	CursorPosition.Y = y;
 	SetConsoleCursorPosition(console, CursorPosition);
 }
 
-class Point{
-	private:
-		int x;
-		int y;
-	public:
-		Point(){
-			x = y = 10;
-		} 
-		Point(int x, int y){
-			this -> x = x;
-			this -> y = y;
-		}
-		void SetPoint(int x, int y){
-			this -> x = x;
-			this -> y = y;
-		}
-		int GetX(){
-			return x;
-		}
-		int GetY(){
-			return y;
-		}
-		void MoveUp(){
-			y--;
-		}
-		void MoveDown(){
-			y++;
-		}
-		void MoveLeft(){
-			x--;
-		}
-		void MoveRight(){
-			x++;
-		}
-		void Draw(){
-			gotoxy(x,y);
-			cout<<"*";
-		}
-		void Erase(){
-			gotoxy(x,y);
-			cout<<" ";
-		}
-		void CopyPos(Point * p){
-			p->x = x;
-			p->y = y;
-		}
-		void Debug(){
-			cout<<"("<<x<<","<<y<<") ";
-		}
+class Point
+{
+	int m_x{};
+	int m_y{};
+
+public:
+	Point()
+	{
+		m_x = m_y = 10;
+	} 
+	Point(int x, int y)
+	{
+		this->m_x = x;
+		this->m_y = y;
+	}
+
+	void setPoint(int x, int y)
+	{
+		this->m_x = x;
+		this->m_y = y;
+	}
+
+	int getX() {return m_x;}
+	int getY() {return m_y;}
+
+	void moveUp() {m_y--;}
+	void moveDown() {m_y++;}
+	void moveLeft() {m_x--;}
+	void moveRight() {m_x++;}
+
+	void draw()
+	{
+		goToXY(m_x, m_y);
+		std::cout << "*";
+	}
+	void erase()
+	{
+		goToXY(m_x, m_y);
+		std::cout << " ";
+	}
+	void copyPos(Point* p)
+	{
+		p->m_x = m_x;
+		p->m_y = m_y;
+	}
+	void debug()
+	{
+		std::cout << "(" << m_x << "," << m_y << ") ";
+	}
 };
 
-class Snake{
-	private:
-		Point * cell[MAXSNAKESIZE]; // array of points to represent snake
-		int size; // current size of snake
-		char dir; // current direction of snake
-		Point fruit; 
-	public:
-		Snake(){
-			size = 1; // default size
-			cell[0] = new Point(20,20); // 20,20 is default position
-			for( int i=1; i<MAXSNAKESIZE; i++){
-				cell[i] = NULL;
-			}
-			fruit.SetPoint(rand()%50, rand()%25); 
+class Snake
+{
+	Point* m_cell[MAXSNAKESIZE]; // array of points to represent snake
+	int m_size; // current size of snake
+	char m_dir; // current direction of snake
+	Point m_fruit;
+
+public:
+	Snake()
+	{
+		m_size = 1; // default size
+		m_cell[0] = new Point(20,20); // 20,20 is default position
+		for(int i=1; i<MAXSNAKESIZE; i++)
+		{
+			m_cell[i] = NULL;
 		}
-		void AddCell(int x, int y){
-			cell[size++] = new Point(x,y);
+		m_fruit.setPoint(rand()%50, rand()%25); 
+	}
+
+	void addCell(int x, int y)
+	{
+		m_cell[m_size++] = new Point(x,y);
+	}
+
+	void turnUp()
+	{
+		m_dir = 'w'; // w is control key for turning upward
+	}
+	void turnDown()
+	{
+		m_dir = 's'; // w is control key for turning downward
+	}
+	void turnLeft()
+	{
+		m_dir = 'a'; // w is control key for turning left
+	}
+	void turnRight()
+	{
+		m_dir = 'd'; // w is control key for turning right
+	}
+
+	void move()
+	{
+		// Clear screen
+		system("cls");
+		
+		// making snake body follow its head
+		for(int i=m_size-1; i>0; i--)
+		{
+			m_cell[i-1]->copyPos(m_cell[i]);
 		}
-		void TurnUp(){
-			dir = 'w'; // w is control key for turning upward
+		
+		// turning snake's head
+		switch(m_dir)
+		{
+			case 'w':
+				m_cell[0]->moveUp();
+				break;
+			case 's':
+				m_cell[0]->moveDown();
+				break;
+			case 'a':
+				m_cell[0]->moveLeft();
+				break;
+			case 'd':
+				m_cell[0]->moveRight();
+				break;
 		}
-		void TurnDown(){
-			dir = 's'; // w is control key for turning downward
+		
+		// Collision with fruit
+		if(m_fruit.getX() == m_cell[0]->getX() && m_fruit.getY() == m_cell[0]->getY())
+		{
+			addCell(0,0);
+			m_fruit.setPoint(rand()%50, rand()%25); 	
 		}
-		void TurnLeft(){
-			dir = 'a'; // w is control key for turning left
+		
+		//drawing snake
+		for(int i=0; i<m_size; i++)
+			m_cell[i]->draw();
+		m_fruit.draw();
+		
+		//debug();
+		
+		Sleep(100);
+	}
+	void debug()
+	{
+		for( int i=0; i<m_size; i++)
+		{
+			m_cell[i]->debug();
 		}
-		void TurnRight(){
-			dir = 'd'; // w is control key for turning right
-		}
-		void Move(){
-			// Clear screen
-			system("cls");
-			
-			// making snake body follow its head
-			for(int i=size-1; i>0; i--){
-				cell[i-1]->CopyPos(cell[i]);
-			}
-			
-			// turning snake's head
-			switch(dir){
-				case 'w':
-					cell[0]->MoveUp();
-					break;
-				case 's':
-					cell[0]->MoveDown();
-					break;
-				case 'a':
-					cell[0]->MoveLeft();
-					break;
-				case 'd':
-					cell[0]->MoveRight();
-					break;
-			}
-			
-			// Collision with fruit
-			if( fruit.GetX() == cell[0]->GetX() && fruit.GetY() == cell[0]->GetY()){
-				AddCell(0,0);
-				fruit.SetPoint(rand()%50, rand()%25); 	
-			}
-			
-			//drawing snake
-			for(int i=0; i<size; i++)
-				cell[i]->Draw();
-			fruit.Draw();
-			
-			//Debug();
-			
-			Sleep(100);
-		}
-		void Debug(){
-			for( int i=0; i<size; i++){
-				cell[i]->Debug();
-			}
-		}
+	}
 };
 
-int main(){
+int main()
+{
 	//random no generation
-	srand( (unsigned)time(NULL));
+	srand((unsigned)time(NULL));
 	
 	// Testing snake 
 	Snake snake;
 	char op = 'l';
-	do{
-		if(kbhit()){
+	do
+	{
+		if(kbhit())
+		{
 			op = getch();
 		}
-		switch(op){
+		switch(op)
+		{
 			case 'w':
 			case 'W':
-				snake.TurnUp();
+				snake.turnUp();
 				break;
 			
 			case 's':
 			case 'S':
-				snake.TurnDown();
+				snake.turnDown();
 				break;
 			
 			case 'a':
 			case 'A':
-				snake.TurnLeft();
+				snake.turnLeft();
 				break;
 			
 			case 'd':
 			case 'D':
-				snake.TurnRight();
+				snake.turnRight();
 				break;
 		}
-		snake.Move();
-	}while(op != 'e');
+		snake.move();
+	} while(op != 'e');
 	
 	return 0;
 }
